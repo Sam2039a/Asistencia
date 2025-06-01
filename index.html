@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asistencia MiShalom</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --azul-marino: #0b1d3a;
+      --celeste: #00d6c2;
+      --fondo-oscuro: #1e1e1e;
+      --texto-claro: #f0f0f0;
+      --verde-vivo: #32cd32; /* verde lima vibrante */
+      --rosa: #ff69b4;
+      --azul-hombre: #1a76c2;
+      --rojo-nino: #e74c3c;
+      --amarillo-tercera: #f1c40f;
+      --header-bg: #031424;
+      --nav-bg: #061d42;
+      --nav-active-bg: #00d6c2;
+      --nav-active-color: #000000;
+    }
+
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--fondo-oscuro);
+      color: var(--texto-claro);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    header {
+      background-color: var(--header-bg);
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid var(--celeste);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--celeste);
+    }
+
+    nav {
+      display: flex;
+      background-color: var(--nav-bg);
+      border-bottom: 2px solid var(--celeste);
+    }
+
+    nav button {
+      flex: 1;
+      padding: 18px 0;
+      background: none;
+      border: none;
+      color: var(--texto-claro);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    nav button.active {
+      background-color: var(--nav-active-bg);
+      color: var(--nav-active-color);
+      /* box-shadow: inset 0 -3px 0 0 var(--verde-vivo); */
+    }
+
+    nav button:hover:not(.active) {
+      background-color: #0e2a56;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 25px auto;
+      padding: 0 15px 40px;
+    }
+
+    .counter {
+      background: #2f2f2f;
+      margin-bottom: 15px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .counter div {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .controls {
+      margin-top: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .controls button {
+      background-color: var(--celeste);
+      color: black;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 8px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+
+    .controls button:hover {
+      background-color: #00a899;
+    }
+
+    .total-highlight {
+      background-color: var(--celeste);
+      color: black;
+      font-weight: 900;
+      font-size: 24px;
+      text-align: center;
+      border-radius: 12px;
+      padding: 14px 0;
+      margin: 25px 0 10px;
+    }
+
+    .category-summary {
+      font-size: 16px;
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    .category-summary div {
+      margin: 5px 0;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .guardar-btn {
+      background-color: var(--verde-vivo);
+      color: black;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 14px 32px;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .guardar-btn:hover {
+      background-color: #28b428;
+    }
+
+    .reiniciar-btn {
+      background-color: #e74c3c;
+      color: white;
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 14px 32px;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .reiniciar-btn:hover {
+      background-color: #c0392b;
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    canvas {
+      background-color: transparent !important;
+      width: 100% !important;
+      height: auto !important;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Estilo para encabezado dentro del área de captura */
+    #titulo-captura {
+      font-size: 24px;
+      font-weight: bold;
+      color: #00d6c2;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Asistencia MiShalom</h1>
+</header>
+
+<nav>
+  <button id="tab-individual" class="active" onclick="switchTab('individual')">Conteo Individual</button>
+  <button id="tab-global" onclick="switchTab('global')">Conteo Global</button>
+</nav>
+
+<div id="individual" class="container">
+  <p id="fecha-individual"></p>
+
+  <div class="counter" id="mujeres">
+    <div>Mujeres: <span class="count">0</span></div>
+    <div class="controls">
+      <button onclick="updateCount('mujeres', -1)">-</button>
+      <button onclick="updateCount('mujeres', 1)">+</button>
+    </div>
+  </div>
+
+  <div class="counter" id="hombres">
+    <div>Hombres: <span class="count">0</span></div>
+    <div class="controls">
+      <button onclick="updateCount('hombres', -1)">-</button>
+      <button onclick="updateCount('hombres', 1)">+</button>
+    </div>
+  </div>
+
+  <div class="counter" id="ninos">
+    <div>Niños: <span class="count">0</span></div>
+    <div class="controls">
+      <button onclick="updateCount('ninos', -1)">-</button>
+      <button onclick="updateCount('ninos', 1)">+</button>
+    </div>
+  </div>
+
+  <div class="counter" id="tercera">
+    <div>Tercera Edad: <span class="count">0</span></div>
+    <div class="controls">
+      <button onclick="updateCount('tercera', -1)">-</button>
+      <button onclick="updateCount('tercera', 1)">+</button>
+    </div>
+  </div>
+
+  <div class="total-highlight">Total: <span id="total">0</span></div>
+  <div class="chart-container">
+    <canvas id="chart-individual"></canvas>
+  </div>
+</div>
+
+<div id="global" class="container" style="display:none;">
+  <div id="capture-area">
+    <div id="titulo-captura">Asistencia MiShalom</div>
+    <p id="fecha-global"></p>
+    <div class="category-summary" id="resumen-global"></div>
+    <div class="total-highlight">Total: <span id="total-global">0</span></div>
+    <div class="chart-container">
+      <canvas id="chart-global"></canvas>
+    </div>
+  </div>
+
+  <div class="button-group" id="botones-captura">
+    <button class="guardar-btn" onclick="guardarConteo()">Guardar Conteo</button>
+    <button class="reiniciar-btn" onclick="reiniciarConteo()">Reiniciar Conteo</button>
+  </div>
+</div>
+
+<script>
+  const counts = {
+    mujeres: 0,
+    hombres: 0,
+    ninos: 0,
+    tercera: 0
+  };
+
+  const fecha = new Date().toLocaleDateString();
+  document.getElementById("fecha-individual").textContent = "Fecha: " + fecha;
+  document.getElementById("fecha-global").textContent = "Fecha: " + fecha;
+
+  const colores = {
+    mujeres: '#ff69b4',
+    hombres: '#1a76c2',
+    ninos: '#e74c3c',
+    tercera: '#f1c40f'
+  };
+
+  function crearConfigGrafico(data) {
+    return {
+      type: 'doughnut',
+      data: {
+        labels: ["Mujeres", "Hombres", "Niños", "Tercera Edad"],
+        datasets: [{
+          label: 'Asistencia',
+          data: data,
+          backgroundColor: [
+            colores.mujeres,
+            colores.hombres,
+            colores.ninos,
+            colores.tercera
+          ],
+          borderColor: '#1e1e1e',
+          borderWidth: 2,
+          hoverOffset: 30
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        animation: {
+          duration: 600,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'white',
+              font: {
+                size: 16,
+                weight: 'bold'
+              }
+            }
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: '#333',
+            titleColor: '#fff',
+            bodyColor: '#ddd',
+            cornerRadius: 8,
+            padding: 10,
+            displayColors: false
+          }
+        }
+      }
+    };
+  }
+
+  const ctxIndividual = document.getElementById('chart-individual').getContext('2d');
+  const ctxGlobal = document.getElementById('chart-global').getContext('2d');
+
+  let chartIndividual = new Chart(ctxIndividual, crearConfigGrafico([0, 0, 0, 0]));
+  let chartGlobal = new Chart(ctxGlobal, crearConfigGrafico([0, 0, 0, 0]));
+
+  function actualizarVista() {
+    const data = Object.values(counts);
+    const total = data.reduce((a,b) => a+b, 0);
+
+    document.getElementById('total').textContent = total;
+    document.getElementById('total-global').textContent = total;
+
+    chartIndividual.data.datasets[0].data = data;
+    chartGlobal.data.datasets[0].data = data;
+
+    chartIndividual.update();
+    chartGlobal.update();
+
+    const resumen = document.getElementById('resumen-global');
+    if(total === 0) {
+      resumen.innerHTML = '';
+    } else {
+      resumen.innerHTML = `
+        <div>Mujeres: ${counts.mujeres} (${((counts.mujeres / total)*100).toFixed(1)}%)</div>
+        <div>Hombres: ${counts.hombres} (${((counts.hombres / total)*100).toFixed(1)}%)</div>
+        <div>Niños: ${counts.ninos} (${((counts.ninos / total)*100).toFixed(1)}%)</div>
+        <div>Tercera Edad: ${counts.tercera} (${((counts.tercera / total)*100).toFixed(1)}%)</div>
+      `;
+    }
+  }
+
+  function updateCount(categoria, delta) {
+    counts[categoria] = Math.max(0, counts[categoria] + delta);
+    document.querySelector(`#${categoria} .count`).textContent = counts[categoria];
+    actualizarVista();
+  }
+
+  function switchTab(tab) {
+    document.getElementById('individual').style.display = tab === 'individual' ? 'block' : 'none';
+    document.getElementById('global').style.display = tab === 'global' ? 'block' : 'none';
+
+    document.getElementById('tab-individual').classList.toggle('active', tab === 'individual');
+    document.getElementById('tab-global').classList.toggle('active', tab === 'global');
+  }
+
+  function guardarConteo() {
+    const area = document.getElementById("capture-area");
+    const botones = document.getElementById("botones-captura");
+
+    botones.style.display = "none"; // Oculta los botones antes de la captura
+
+    html2canvas(area, { backgroundColor: '#1e1e1e' }).then(canvas => {
+      botones.style.display = "flex"; // Restaura los botones después
+
+      const link = document.createElement("a");
+      link.download = `conteo_${new Date().toLocaleDateString().replace(/\//g, '-')}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function reiniciarConteo() {
+    const password = prompt("Ingrese la contraseña para reiniciar conteo:");
+    if(password === "2039") {
+      for (const key in counts) counts[key] = 0;
+      document.querySelectorAll('.count').forEach(span => span.textContent = '0');
+      actualizarVista();
+      alert("Conteo reiniciado.");
+    } else {
+      alert("Contraseña incorrecta.");
+    }
+  }
+
+  actualizarVista();
+</script>
+</body>
+</html>
