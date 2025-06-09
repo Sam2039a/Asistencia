@@ -642,7 +642,7 @@
     });
   }
 
-  // Adultos y Niños celeste, solo número y al final
+  // Adultos y Niños celeste, pero ahora Adultos suma Hombres + Mujeres + Tercera Edad
   function actualizarResumenGlobal(totalGlobal) {
     const total = totalGlobal.mujeres + totalGlobal.hombres + totalGlobal.ninos + totalGlobal.tercera;
     const resumenDiv = document.getElementById('resumen-global');
@@ -669,7 +669,7 @@
         Tercera Edad: ${totalGlobal.tercera} (${porcentaje(totalGlobal.tercera, total)})
       </div>
       <div class="celeste-cta">
-        Adultos: ${totalGlobal.hombres + totalGlobal.mujeres}
+        Adultos: ${totalGlobal.hombres + totalGlobal.mujeres + totalGlobal.tercera}
       </div>
       <div class="celeste-cta">
         Niños: ${totalGlobal.ninos}
