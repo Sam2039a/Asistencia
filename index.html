@@ -4,22 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Asistencia MiShalom</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     :root {
       --azul-marino: #0b1d3a;
       --celeste: #00d6c2;
+      --celeste-oscuro: #00988a;
       --fondo-oscuro: #1e1e1e;
       --texto-claro: #f0f0f0;
-      --verde-vivo: #32cd32; /* verde lima vibrante */
+      --verde-vivo: #32cd32;
       --rosa: #ff69b4;
       --azul-hombre: #1a76c2;
       --rojo-nino: #e74c3c;
       --amarillo-tercera: #f1c40f;
       --header-bg: #031424;
-      --nav-bg: #061d42;
-      --nav-active-bg: #00d6c2;
+      --nav-bg: var(--celeste);
+      --nav-active-bg: var(--celeste);
+      --nav-inactive-bg: var(--celeste-oscuro);
       --nav-active-color: #000000;
     }
 
@@ -53,23 +57,24 @@
     nav button {
       flex: 1;
       padding: 18px 0;
-      background: none;
+      background-color: var(--nav-inactive-bg);
       border: none;
-      color: var(--texto-claro);
+      color: var(--nav-active-color);
       font-size: 17px;
       font-weight: 700;
       cursor: pointer;
-      transition: background-color 0.25s ease, color 0.25s ease;
+      transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: none;
     }
 
     nav button.active {
       background-color: var(--nav-active-bg);
       color: var(--nav-active-color);
-      /* box-shadow: inset 0 -3px 0 0 var(--verde-vivo); */
+      box-shadow: 0 0 15px 3px rgba(0, 214, 194, 0.7);
     }
 
     nav button:hover:not(.active) {
-      background-color: #0e2a56;
+      background-color: var(--celeste);
     }
 
     .container {
@@ -141,11 +146,34 @@
       justify-content: center;
       gap: 18px;
       margin-bottom: 25px;
+      flex-wrap: wrap;
     }
 
-    .guardar-btn {
-      background-color: var(--verde-vivo);
-      color: black;
+    .enviar-btn {
+      background-color: var(--azul-marino);
+      color: var(--texto-claro);
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 14px 32px;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+      display: block;
+      margin: 25px auto 0;
+      width: 60%;
+      max-width: 280px;
+      text-align: center;
+      box-shadow: 0 0 16px 4px #00d6c280, 0 0 1px #fff;
+    }
+
+    .enviar-btn:hover {
+      background-color: #051423;
+      box-shadow: 0 0 24px 8px #00fff680, 0 0 1px #fff;
+    }
+
+    .guardar-btn, .reiniciar-btn {
       font-weight: 700;
       border-radius: 12px;
       padding: 14px 32px;
@@ -153,6 +181,15 @@
       font-size: 20px;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      user-select: none;
+      flex: none;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .guardar-btn {
+      background-color: var(--verde-vivo);
+      color: black;
     }
 
     .guardar-btn:hover {
@@ -162,13 +199,6 @@
     .reiniciar-btn {
       background-color: #e74c3c;
       color: white;
-      font-weight: 700;
-      border-radius: 12px;
-      padding: 14px 32px;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
     }
 
     .reiniciar-btn:hover {
@@ -188,13 +218,30 @@
       aspect-ratio: 1 / 1;
     }
 
-    /* Estilo para encabezado dentro del área de captura */
     #titulo-captura {
       font-size: 24px;
       font-weight: bold;
       color: #00d6c2;
       text-align: center;
       margin-bottom: 10px;
+    }
+
+    #capture-area {
+      background: var(--fondo-oscuro) !important;
+      color: var(--texto-claro);
+      padding: 15px;
+      border-radius: 18px;
+    }
+
+    #subnombre-captura {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      font-style: italic;
+      text-shadow: 0 1px 6px #00d6c299, 0 0 1px #fff;
     }
   </style>
 </head>
@@ -209,6 +256,7 @@
   <button id="tab-global" onclick="switchTab('global')">Conteo Global</button>
 </nav>
 
+<!-- Interfaz Conteo Individual -->
 <div id="individual" class="container">
   <p id="fecha-individual"></p>
 
@@ -248,11 +296,15 @@
   <div class="chart-container">
     <canvas id="chart-individual"></canvas>
   </div>
+
+  <button class="enviar-btn" onclick="guardarConteo()">Enviar</button>
 </div>
 
+<!-- Interfaz Conteo Global -->
 <div id="global" class="container" style="display:none;">
   <div id="capture-area">
     <div id="titulo-captura">Asistencia MiShalom</div>
+    <div id="subnombre-captura"></div>
     <p id="fecha-global"></p>
     <div class="category-summary" id="resumen-global"></div>
     <div class="total-highlight">Total: <span id="total-global">0</span></div>
@@ -262,12 +314,33 @@
   </div>
 
   <div class="button-group" id="botones-captura">
-    <button class="guardar-btn" onclick="guardarConteo()">Guardar Conteo</button>
+    <button class="guardar-btn" onclick="descargarImagen()">Guardar imagen</button>
     <button class="reiniciar-btn" onclick="reiniciarConteo()">Reiniciar Conteo</button>
   </div>
 </div>
 
 <script>
+  // --- Configuración Firebase ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyB35zZ1kjLkTRhK4qAQblIZnrAPUEk-ur0",
+    authDomain: "mishalom-bf920.firebaseapp.com",
+    databaseURL: "https://mishalom-bf920-default-rtdb.firebaseio.com",
+    projectId: "mishalom-bf920",
+    storageBucket: "mishalom-bf920.appspot.com",
+    messagingSenderId: "757932942282",
+    appId: "1:757932942282:web:c78e00f455b58c60922533",
+    measurementId: "G-EL431318HR"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = 'user_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('userId', userId);
+  }
+
   const counts = {
     mujeres: 0,
     hombres: 0,
@@ -275,9 +348,22 @@
     tercera: 0
   };
 
-  const fecha = new Date().toLocaleDateString();
-  document.getElementById("fecha-individual").textContent = "Fecha: " + fecha;
-  document.getElementById("fecha-global").textContent = "Fecha: " + fecha;
+  function formatearFechaExtendida(fecha = new Date()) {
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    const diaSemana = dias[fecha.getDay()];
+    const dia = fecha.getDate();
+    const mes = meses[fecha.getMonth()];
+    const anio = fecha.getFullYear();
+    return `${diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, ${dia} de ${mes} ${anio}`;
+  }
+
+  const fechaObj = new Date();
+  document.getElementById("fecha-individual").textContent = "Fecha: " + formatearFechaExtendida(fechaObj);
+  document.getElementById("fecha-global").textContent = "Fecha: " + formatearFechaExtendida(fechaObj);
 
   const colores = {
     mujeres: '#ff69b4',
@@ -286,52 +372,30 @@
     tercera: '#f1c40f'
   };
 
+  let ultimoNombreUsuario = localStorage.getItem('nombreUsuario') || "";
+
   function crearConfigGrafico(data) {
     return {
       type: 'doughnut',
       data: {
-        labels: ["Mujeres", "Hombres", "Niños", "Tercera Edad"],
+        labels: ['Mujeres', 'Hombres', 'Niños', 'Tercera Edad'],
         datasets: [{
-          label: 'Asistencia',
-          data: data,
+          data: [data.mujeres, data.hombres, data.ninos, data.tercera],
           backgroundColor: [
             colores.mujeres,
             colores.hombres,
             colores.ninos,
             colores.tercera
           ],
-          borderColor: '#1e1e1e',
-          borderWidth: 2,
-          hoverOffset: 30
+          borderWidth: 0
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
-        cutout: '60%',
-        animation: {
-          duration: 600,
-          easing: 'easeOutQuart'
-        },
         plugins: {
           legend: {
             position: 'bottom',
-            labels: {
-              color: 'white',
-              font: {
-                size: 16,
-                weight: 'bold'
-              }
-            }
-          },
-          tooltip: {
-            enabled: true,
-            backgroundColor: '#333',
-            titleColor: '#fff',
-            bodyColor: '#ddd',
-            cornerRadius: 8,
-            padding: 10,
-            displayColors: false
+            labels: { color: '#ccc' }
           }
         }
       }
@@ -341,78 +405,239 @@
   const ctxIndividual = document.getElementById('chart-individual').getContext('2d');
   const ctxGlobal = document.getElementById('chart-global').getContext('2d');
 
-  let chartIndividual = new Chart(ctxIndividual, crearConfigGrafico([0, 0, 0, 0]));
-  let chartGlobal = new Chart(ctxGlobal, crearConfigGrafico([0, 0, 0, 0]));
+  let chartIndividual = new Chart(ctxIndividual, crearConfigGrafico(counts));
+  let chartGlobal = new Chart(ctxGlobal, crearConfigGrafico({mujeres:0,hombres:0,ninos:0,tercera:0}));
 
-  function actualizarVista() {
-    const data = Object.values(counts);
-    const total = data.reduce((a,b) => a+b, 0);
-
+  function updateCount(category, delta) {
+    const newValue = counts[category] + delta;
+    if (newValue < 0) return;
+    counts[category] = newValue;
+    document.querySelector(`#${category} .count`).textContent = newValue;
+    let total = counts.mujeres + counts.hombres + counts.ninos + counts.tercera;
     document.getElementById('total').textContent = total;
-    document.getElementById('total-global').textContent = total;
-
-    chartIndividual.data.datasets[0].data = data;
-    chartGlobal.data.datasets[0].data = data;
-
+    chartIndividual.data.datasets[0].data = [counts.mujeres, counts.hombres, counts.ninos, counts.tercera];
     chartIndividual.update();
-    chartGlobal.update();
-
-    const resumen = document.getElementById('resumen-global');
-    if(total === 0) {
-      resumen.innerHTML = '';
-    } else {
-      resumen.innerHTML = `
-        <div>Mujeres: ${counts.mujeres} (${((counts.mujeres / total)*100).toFixed(1)}%)</div>
-        <div>Hombres: ${counts.hombres} (${((counts.hombres / total)*100).toFixed(1)}%)</div>
-        <div>Niños: ${counts.ninos} (${((counts.ninos / total)*100).toFixed(1)}%)</div>
-        <div>Tercera Edad: ${counts.tercera} (${((counts.tercera / total)*100).toFixed(1)}%)</div>
-      `;
-    }
-  }
-
-  function updateCount(categoria, delta) {
-    counts[categoria] = Math.max(0, counts[categoria] + delta);
-    document.querySelector(`#${categoria} .count`).textContent = counts[categoria];
-    actualizarVista();
   }
 
   function switchTab(tab) {
-    document.getElementById('individual').style.display = tab === 'individual' ? 'block' : 'none';
-    document.getElementById('global').style.display = tab === 'global' ? 'block' : 'none';
-
-    document.getElementById('tab-individual').classList.toggle('active', tab === 'individual');
-    document.getElementById('tab-global').classList.toggle('active', tab === 'global');
+    if (tab === 'individual') {
+      document.getElementById('individual').style.display = 'block';
+      document.getElementById('global').style.display = 'none';
+      document.getElementById('tab-individual').classList.add('active');
+      document.getElementById('tab-global').classList.remove('active');
+    } else {
+      document.getElementById('individual').style.display = 'none';
+      document.getElementById('global').style.display = 'block';
+      document.getElementById('tab-global').classList.add('active');
+      document.getElementById('tab-individual').classList.remove('active');
+      cargarConteoGlobal();
+      if (!window._autoGlobalUpdater) {
+        window._autoGlobalUpdater = setInterval(cargarConteoGlobal, 10000);
+      }
+    }
   }
 
+  // MODIFICADO: guardar múltiples respuestas por usuario en vez de sobrescribir
   function guardarConteo() {
-    const area = document.getElementById("capture-area");
-    const botones = document.getElementById("botones-captura");
+    const total = counts.mujeres + counts.hombres + counts.ninos + counts.tercera;
+    if (total === 0) {
+      alert('Por favor, ingrese al menos una persona antes de enviar.');
+      return;
+    }
+    const fechaKey = new Date().toISOString().slice(0,10);
+    // Creamos un nuevo "push" para cada respuesta del usuario
+    const userPushRef = database.ref(`conteos/${fechaKey}/${userId}`).push();
 
-    botones.style.display = "none"; // Oculta los botones antes de la captura
+    userPushRef.set({
+      mujeres: counts.mujeres,
+      hombres: counts.hombres,
+      ninos: counts.ninos,
+      tercera: counts.tercera,
+      timestamp: Date.now()
+      // No se guarda nombre aquí
+    })
+      .then(() => {
+        alert('Conteo enviado exitosamente.');
+        reiniciarIndividual();
+        database.ref(`conteos/${fechaKey}/_lastUpdate`).set(Date.now());
+      })
+      .catch((error) => {
+        alert('Error al enviar conteo: ' + error.message);
+      });
+  }
 
-    html2canvas(area, { backgroundColor: '#1e1e1e' }).then(canvas => {
-      botones.style.display = "flex"; // Restaura los botones después
+  function mostrarSubtituloGlobal(nombre) {
+    const subtituloDiv = document.getElementById('subnombre-captura');
+    if (nombre) {
+      subtituloDiv.textContent = nombre;
+      subtituloDiv.style.display = '';
+    } else {
+      subtituloDiv.textContent = '';
+      subtituloDiv.style.display = 'none';
+    }
+  }
 
-      const link = document.createElement("a");
-      link.download = `conteo_${new Date().toLocaleDateString().replace(/\//g, '-')}.png`;
-      link.href = canvas.toDataURL("image/png");
+  function reiniciarIndividual() {
+    for (let cat in counts) {
+      counts[cat] = 0;
+      document.querySelector(`#${cat} .count`).textContent = 0;
+    }
+    document.getElementById('total').textContent = 0;
+    chartIndividual.data.datasets[0].data = [0,0,0,0];
+    chartIndividual.update();
+  }
+
+  function cargarConteoGlobal() {
+    const fechaKey = new Date().toISOString().slice(0,10);
+    const conteosRef = database.ref(`conteos/${fechaKey}`);
+
+    conteosRef.once('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        actualizarResumenGlobal({mujeres:0,hombres:0,ninos:0,tercera:0});
+        mostrarSubtituloGlobal("");
+        return;
+      }
+      let totalGlobal = {mujeres:0,hombres:0,ninos:0,tercera:0};
+      for (const user in data) {
+        if (user === '_lastUpdate') continue;
+        const userEntries = data[user];
+        // Si userEntries es un objeto, revisar si es un push de múltiples entradas
+        if (userEntries && typeof userEntries === 'object' && !Array.isArray(userEntries)) {
+          for (const entryKey in userEntries) {
+            const conteo = userEntries[entryKey];
+            // Verificar que contiene los campos esperados
+            if (conteo && typeof conteo === 'object' && 'mujeres' in conteo && 'hombres' in conteo && 'ninos' in conteo && 'tercera' in conteo) {
+              totalGlobal.mujeres += conteo.mujeres || 0;
+              totalGlobal.hombres += conteo.hombres || 0;
+              totalGlobal.ninos += conteo.ninos || 0;
+              totalGlobal.tercera += conteo.tercera || 0;
+            }
+          }
+        }
+      }
+      actualizarResumenGlobal(totalGlobal);
+      mostrarSubtituloGlobal(""); // No mostrar nombre por defecto
+    });
+  }
+
+  function actualizarResumenGlobal(totalGlobal) {
+    const total = totalGlobal.mujeres + totalGlobal.hombres + totalGlobal.ninos + totalGlobal.tercera;
+    const resumenDiv = document.getElementById('resumen-global');
+    function porcentaje(valor, total) {
+      if (total === 0) return "0%";
+      let val = (valor * 100 / total);
+      if (val === 0) return "0%";
+      if (Math.floor(val) === val) return `${val}%`;
+      let str = val.toFixed(1);
+      if (str.endsWith('.0')) str = str.slice(0, -2);
+      return `${str}%`;
+    }
+    resumenDiv.innerHTML = `
+      <div style="color:${colores.mujeres}; font-weight: 700;">
+        Mujeres: ${totalGlobal.mujeres} (${porcentaje(totalGlobal.mujeres, total)})
+      </div>
+      <div style="color:${colores.hombres}; font-weight: 700;">
+        Hombres: ${totalGlobal.hombres} (${porcentaje(totalGlobal.hombres, total)})
+      </div>
+      <div style="color:${colores.ninos}; font-weight: 700;">
+        Niños: ${totalGlobal.ninos} (${porcentaje(totalGlobal.ninos, total)})
+      </div>
+      <div style="color:${colores.tercera}; font-weight: 700;">
+        Tercera Edad: ${totalGlobal.tercera} (${porcentaje(totalGlobal.tercera, total)})
+      </div>
+    `;
+    document.getElementById('total-global').textContent = total;
+    chartGlobal.data.datasets[0].data = [
+      totalGlobal.mujeres,
+      totalGlobal.hombres,
+      totalGlobal.ninos,
+      totalGlobal.tercera
+    ];
+    chartGlobal.update();
+  }
+
+  function descargarImagen() {
+    let nombre = prompt('Por favor, ingresa el nombre que debe aparecer en la imagen:', ultimoNombreUsuario);
+    if (!nombre) {
+      alert('No se descargó la imagen. Es necesario ingresar un nombre.');
+      return;
+    }
+    nombre = nombre.trim();
+    if (!nombre) {
+      alert('No se descargó la imagen. Es necesario ingresar un nombre.');
+      return;
+    }
+    localStorage.setItem('nombreUsuario', nombre);
+    ultimoNombreUsuario = nombre;
+    mostrarSubtituloGlobal(nombre);
+
+    const area = document.getElementById('capture-area');
+    const originalBg = area.style.backgroundColor;
+    area.style.backgroundColor = '#1e1e1e';
+    html2canvas(area, {
+      backgroundColor: '#1e1e1e'
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `asistencia_mishalom_${new Date().toISOString().slice(0,10)}.png`;
+      link.href = canvas.toDataURL();
       link.click();
+      area.style.backgroundColor = originalBg;
+      mostrarSubtituloGlobal(""); // quitar el nombre después de capturar
     });
   }
 
   function reiniciarConteo() {
-    const password = prompt("Ingrese la contraseña para reiniciar conteo:");
-    if(password === "2039") {
-      for (const key in counts) counts[key] = 0;
-      document.querySelectorAll('.count').forEach(span => span.textContent = '0');
-      actualizarVista();
-      alert("Conteo reiniciado.");
-    } else {
-      alert("Contraseña incorrecta.");
+    const pass = prompt('Ingrese la contraseña para reiniciar el conteo:');
+    if (pass !== '2039') {
+      alert('Contraseña incorrecta. No se realizó el reinicio.');
+      return;
     }
+    if (!confirm('¿Seguro que desea reiniciar todo el conteo global? Se eliminarán todos los datos del día.')) return;
+    const fechaKey = new Date().toISOString().slice(0,10);
+    const conteosRef = database.ref(`conteos/${fechaKey}`);
+    conteosRef.remove()
+      .then(() => {
+        actualizarResumenGlobal({mujeres:0,hombres:0,ninos:0,tercera:0});
+        mostrarSubtituloGlobal("");
+        alert('Conteo global reiniciado.');
+      })
+      .catch((error) => {
+        alert('Error al reiniciar conteo: ' + error.message);
+      });
   }
 
-  actualizarVista();
+  (function activarActualizacionGlobal() {
+    const fechaKey = new Date().toISOString().slice(0,10);
+    const conteosRef = database.ref(`conteos/${fechaKey}`);
+    conteosRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        actualizarResumenGlobal({mujeres:0,hombres:0,ninos:0,tercera:0});
+        mostrarSubtituloGlobal("");
+        return;
+      }
+      let totalGlobal = {mujeres:0,hombres:0,ninos:0,tercera:0};
+      for (const user in data) {
+        if (user === '_lastUpdate') continue;
+        const userEntries = data[user];
+        if (userEntries && typeof userEntries === 'object' && !Array.isArray(userEntries)) {
+          for (const entryKey in userEntries) {
+            const conteo = userEntries[entryKey];
+            if (conteo && typeof conteo === 'object' && 'mujeres' in conteo && 'hombres' in conteo && 'ninos' in conteo && 'tercera' in conteo) {
+              totalGlobal.mujeres += conteo.mujeres || 0;
+              totalGlobal.hombres += conteo.hombres || 0;
+              totalGlobal.ninos += conteo.ninos || 0;
+              totalGlobal.tercera += conteo.tercera || 0;
+            }
+          }
+        }
+      }
+      actualizarResumenGlobal(totalGlobal);
+      mostrarSubtituloGlobal(""); // No mostrar nombre por defecto
+    });
+  })();
+
 </script>
 </body>
 </html>
