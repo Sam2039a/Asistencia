@@ -141,6 +141,12 @@
       margin: 5px 0;
     }
 
+    /* Color celeste para Adultos y Niños global */
+    .category-summary .celeste-cta {
+      color: var(--celeste) !important;
+      font-weight: 700;
+    }
+
     .button-group {
       display: flex;
       justify-content: center;
@@ -243,29 +249,6 @@
       font-style: italic;
       text-shadow: 0 1px 6px #00d6c299, 0 0 1px #fff;
     }
-
-    /* Nuevos estilos para Adultos y Niños global */
-    .global-extra-totals {
-      background: #222;
-      color: #fff;
-      font-size: 20px;
-      font-weight: 800;
-      text-align: center;
-      border-radius: 12px;
-      padding: 10px 0;
-      margin-bottom: 10px;
-      margin-top: 5px;
-      letter-spacing: 0.5px;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-    }
-    .global-extra-totals span {
-      color: #00d6c2;
-      font-size: 22px;
-      font-weight: 900;
-      margin: 0 8px;
-    }
   </style>
 </head>
 <body>
@@ -330,11 +313,6 @@
     <div id="subnombre-captura"></div>
     <p id="fecha-global"></p>
     <div class="category-summary" id="resumen-global"></div>
-    <!-- Adultos y Niños global -->
-    <div class="global-extra-totals">
-      Adultos: <span id="total-adultos-global">0</span>
-      Niños: <span id="total-ninos-global">0</span>
-    </div>
     <div class="total-highlight">Total: <span id="total-global">0</span></div>
     <div class="chart-container">
       <canvas id="chart-global"></canvas>
@@ -397,7 +375,8 @@
     mujeres: '#ff69b4',
     hombres: '#1a76c2',
     ninos: '#e74c3c',
-    tercera: '#f1c40f'
+    tercera: '#f1c40f',
+    celeste: '#00d6c2'
   };
 
   let ultimoNombreUsuario = localStorage.getItem('nombreUsuario') || "";
@@ -465,7 +444,6 @@
     }
   }
 
-  // MODIFICADO: guardar múltiples respuestas por usuario en vez de sobrescribir
   function guardarConteo() {
     const total = counts.mujeres + counts.hombres + counts.ninos + counts.tercera;
     if (total === 0) {
@@ -473,16 +451,13 @@
       return;
     }
     const fechaKey = new Date().toISOString().slice(0,10);
-    // Creamos un nuevo "push" para cada respuesta del usuario
     const userPushRef = database.ref(`conteos/${fechaKey}/${userId}`).push();
-
     userPushRef.set({
       mujeres: counts.mujeres,
       hombres: counts.hombres,
       ninos: counts.ninos,
       tercera: counts.tercera,
       timestamp: Date.now()
-      // No se guarda nombre aquí
     })
       .then(() => {
         alert('Conteo enviado exitosamente.');
@@ -530,11 +505,9 @@
       for (const user in data) {
         if (user === '_lastUpdate') continue;
         const userEntries = data[user];
-        // Si userEntries es un objeto, revisar si es un push de múltiples entradas
         if (userEntries && typeof userEntries === 'object' && !Array.isArray(userEntries)) {
           for (const entryKey in userEntries) {
             const conteo = userEntries[entryKey];
-            // Verificar que contiene los campos esperados
             if (conteo && typeof conteo === 'object' && 'mujeres' in conteo && 'hombres' in conteo && 'ninos' in conteo && 'tercera' in conteo) {
               totalGlobal.mujeres += conteo.mujeres || 0;
               totalGlobal.hombres += conteo.hombres || 0;
@@ -545,14 +518,13 @@
         }
       }
       actualizarResumenGlobal(totalGlobal);
-      mostrarSubtituloGlobal(""); // No mostrar nombre por defecto
+      mostrarSubtituloGlobal("");
     });
   }
 
+  // Adultos y Niños celeste, solo número y al final
   function actualizarResumenGlobal(totalGlobal) {
     const total = totalGlobal.mujeres + totalGlobal.hombres + totalGlobal.ninos + totalGlobal.tercera;
-    const adultos = totalGlobal.mujeres + totalGlobal.hombres + totalGlobal.tercera;
-    const ninos = totalGlobal.ninos;
     const resumenDiv = document.getElementById('resumen-global');
     function porcentaje(valor, total) {
       if (total === 0) return "0%";
@@ -576,11 +548,13 @@
       <div style="color:${colores.tercera}; font-weight: 700;">
         Tercera Edad: ${totalGlobal.tercera} (${porcentaje(totalGlobal.tercera, total)})
       </div>
+      <div class="celeste-cta">
+        Adultos: ${totalGlobal.hombres + totalGlobal.mujeres}
+      </div>
+      <div class="celeste-cta">
+        Niños: ${totalGlobal.ninos}
+      </div>
     `;
-    // NUEVO: actualizar Adultos y Niños global
-    document.getElementById('total-adultos-global').textContent = adultos;
-    document.getElementById('total-ninos-global').textContent = ninos;
-    // Total General
     document.getElementById('total-global').textContent = total;
     chartGlobal.data.datasets[0].data = [
       totalGlobal.mujeres,
@@ -617,7 +591,7 @@
       link.href = canvas.toDataURL();
       link.click();
       area.style.backgroundColor = originalBg;
-      mostrarSubtituloGlobal(""); // quitar el nombre después de capturar
+      mostrarSubtituloGlobal("");
     });
   }
 
@@ -668,7 +642,7 @@
         }
       }
       actualizarResumenGlobal(totalGlobal);
-      mostrarSubtituloGlobal(""); // No mostrar nombre por defecto
+      mostrarSubtituloGlobal("");
     });
   })();
 
