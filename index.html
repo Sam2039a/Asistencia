@@ -249,6 +249,58 @@
       font-style: italic;
       text-shadow: 0 1px 6px #00d6c299, 0 0 1px #fff;
     }
+
+    /* --- Modal personalizado para diálogos --- */
+    #custom-modal-bg {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #custom-modal {
+      background: #232a36;
+      color: #fff;
+      padding: 32px 24px 18px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0007;
+      min-width: 260px;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #custom-modal input {
+      margin: 18px auto 16px;
+      display: block;
+      width: 80%;
+      padding: 9px 12px;
+      border: 1px solid #00d6c2;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #181c22;
+      color: #eee;
+    }
+    #custom-modal-buttons button {
+      margin: 0 6px;
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #custom-modal-buttons button.accept {
+      background: #32cd32;
+      color: #181c22;
+    }
+    #custom-modal-buttons button.cancel {
+      background: #e74c3c;
+      color: #fff;
+    }
+    #custom-modal-buttons button:hover {
+      filter: brightness(1.07);
+    }
   </style>
 </head>
 <body>
@@ -322,6 +374,15 @@
   <div class="button-group" id="botones-captura">
     <button class="guardar-btn" onclick="descargarImagen()">Guardar imagen</button>
     <button class="reiniciar-btn" onclick="reiniciarConteo()">Reiniciar Conteo</button>
+  </div>
+</div>
+
+<!-- Modal personalizado para alert, confirm, prompt -->
+<div id="custom-modal-bg">
+  <div id="custom-modal">
+    <div id="custom-modal-message"></div>
+    <input id="custom-modal-input" style="display:none;" />
+    <div id="custom-modal-buttons"></div>
   </div>
 </div>
 
@@ -444,14 +505,73 @@
     }
   }
 
-  function guardarConteo() {
+  // Modal personalizado para alert, confirm, prompt
+  function customDialog({message = "", input = false, confirm = false, defaultValue = "", okText = "Aceptar", cancelText = "Cancelar"}) {
+    return new Promise((resolve) => {
+      const bg = document.getElementById('custom-modal-bg');
+      const msg = document.getElementById('custom-modal-message');
+      const inp = document.getElementById('custom-modal-input');
+      const btns = document.getElementById('custom-modal-buttons');
+      msg.innerHTML = message;
+      if (input) {
+        inp.style.display = '';
+        inp.value = defaultValue || "";
+        inp.focus();
+      } else {
+        inp.style.display = 'none';
+      }
+      btns.innerHTML = '';
+      // Botón cancelar (izquierda) si es confirm o prompt
+      if (confirm || input) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = cancelText;
+        cancelBtn.className = "cancel";
+        cancelBtn.onclick = () => {
+          bg.style.display = 'none';
+          resolve(false);
+        };
+        btns.appendChild(cancelBtn);
+      }
+      // Botón aceptar (derecha)
+      const okBtn = document.createElement('button');
+      okBtn.textContent = okText;
+      okBtn.className = "accept";
+      okBtn.onclick = () => {
+        bg.style.display = 'none';
+        resolve(input ? inp.value : true);
+      };
+      btns.appendChild(okBtn);
+
+      bg.style.display = 'flex';
+
+      // Permitir cerrar con Escape
+      bg.onkeydown = (e) => {
+        if (e.key === "Escape") {
+          bg.style.display = 'none';
+          resolve(false);
+        }
+        if (e.key === "Enter" && input) {
+          okBtn.click();
+        }
+      };
+      inp.onkeydown = bg.onkeydown;
+      setTimeout(() => {
+        if (input) inp.focus();
+        else okBtn.focus();
+      }, 120);
+    });
+  }
+
+  // Guardar con diálogos mejorados
+  async function guardarConteo() {
     const total = counts.mujeres + counts.hombres + counts.ninos + counts.tercera;
     if (total === 0) {
-      alert('Por favor, ingrese al menos una persona antes de enviar.');
+      await customDialog({message: 'Por favor, ingrese al menos una persona antes de enviar.'});
       return;
     }
     const fechaKey = new Date().toISOString().slice(0,10);
     const userPushRef = database.ref(`conteos/${fechaKey}/${userId}`).push();
+
     userPushRef.set({
       mujeres: counts.mujeres,
       hombres: counts.hombres,
@@ -459,13 +579,13 @@
       tercera: counts.tercera,
       timestamp: Date.now()
     })
-      .then(() => {
-        alert('Conteo enviado exitosamente.');
+      .then(async () => {
+        await customDialog({message: 'Conteo enviado exitosamente.'});
         reiniciarIndividual();
         database.ref(`conteos/${fechaKey}/_lastUpdate`).set(Date.now());
       })
-      .catch((error) => {
-        alert('Error al enviar conteo: ' + error.message);
+      .catch(async (error) => {
+        await customDialog({message: 'Error al enviar conteo: ' + error.message});
       });
   }
 
@@ -565,15 +685,16 @@
     chartGlobal.update();
   }
 
-  function descargarImagen() {
-    let nombre = prompt('Por favor, ingresa el nombre que debe aparecer en la imagen:', ultimoNombreUsuario);
+  // Diálogo mejorado para descargar imagen
+  async function descargarImagen() {
+    let nombre = await customDialog({message: 'Por favor, ingresa el nombre que debe aparecer en la imagen:', input: true, defaultValue: ultimoNombreUsuario, okText: "Aceptar", cancelText: "Cancelar"});
     if (!nombre) {
-      alert('No se descargó la imagen. Es necesario ingresar un nombre.');
+      await customDialog({message: 'No se descargó la imagen. Es necesario ingresar un nombre.'});
       return;
     }
     nombre = nombre.trim();
     if (!nombre) {
-      alert('No se descargó la imagen. Es necesario ingresar un nombre.');
+      await customDialog({message: 'No se descargó la imagen. Es necesario ingresar un nombre.'});
       return;
     }
     localStorage.setItem('nombreUsuario', nombre);
@@ -595,23 +716,25 @@
     });
   }
 
-  function reiniciarConteo() {
-    const pass = prompt('Ingrese la contraseña para reiniciar el conteo:');
+  // Diálogo mejorado para reiniciar conteo
+  async function reiniciarConteo() {
+    const pass = await customDialog({message: 'Ingrese la contraseña para reiniciar el conteo:', input: true, okText: "Aceptar", cancelText: "Cancelar"});
     if (pass !== '2039') {
-      alert('Contraseña incorrecta. No se realizó el reinicio.');
+      await customDialog({message: 'Contraseña incorrecta. No se realizó el reinicio.'});
       return;
     }
-    if (!confirm('¿Seguro que desea reiniciar todo el conteo global? Se eliminarán todos los datos del día.')) return;
+    const conf = await customDialog({message: '¿Seguro que desea reiniciar todo el conteo global? Se eliminarán todos los datos del día.', confirm: true, okText: "Sí, reiniciar", cancelText: "Cancelar"});
+    if (!conf) return;
     const fechaKey = new Date().toISOString().slice(0,10);
     const conteosRef = database.ref(`conteos/${fechaKey}`);
     conteosRef.remove()
-      .then(() => {
+      .then(async () => {
         actualizarResumenGlobal({mujeres:0,hombres:0,ninos:0,tercera:0});
         mostrarSubtituloGlobal("");
-        alert('Conteo global reiniciado.');
+        await customDialog({message: 'Conteo global reiniciado.'});
       })
-      .catch((error) => {
-        alert('Error al reiniciar conteo: ' + error.message);
+      .catch(async (error) => {
+        await customDialog({message: 'Error al reiniciar conteo: ' + error.message});
       });
   }
 
